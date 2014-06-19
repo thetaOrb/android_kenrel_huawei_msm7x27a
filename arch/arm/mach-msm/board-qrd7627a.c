@@ -62,7 +62,8 @@
 #include "board-msm7627a.h"
 
 #define PMEM_KERNEL_EBI1_SIZE	0x3A000
-#define MSM_PMEM_AUDIO_SIZE	0x1F4000
+#define MSM_PMEM_AUDIO_SIZE  	0xF0000
+#define BOOTLOADER_BASE_ADDR    0x10000
 #define BAHAMA_SLAVE_ID_FM_REG 0x02
 #define FM_GPIO	83
 #define BT_PCM_BCLK_MODE  0x88
@@ -135,7 +136,7 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 #define CAMERA_ZSL_SIZE		(SZ_1M * 60)
 
 #ifdef CONFIG_ION_MSM
-#define MSM_ION_HEAP_NUM	4
+#define MSM_ION_HEAP_NUM	5
 static struct platform_device ion_dev;
 static int msm_ion_camera_size;
 static int msm_ion_audio_size;
@@ -626,7 +627,7 @@ static void fix_sizes(void)
 		pmem_adsp_size = CAMERA_ZSL_SIZE;
 #ifdef CONFIG_ION_MSM
 	msm_ion_camera_size = pmem_adsp_size;
-	msm_ion_audio_size = (MSM_PMEM_AUDIO_SIZE + PMEM_KERNEL_EBI1_SIZE);
+	msm_ion_audio_size = MSM_PMEM_AUDIO_SIZE;
 	msm_ion_sf_size = pmem_mdp_size;
 #endif
 }
@@ -661,7 +662,7 @@ static struct ion_platform_data ion_pdata = {
 			.memory_type = ION_EBI_TYPE,
 			.extra_data = (void *)&co_ion_pdata,
 		},
-		/* PMEM_AUDIO */
+		/* AUDIO HEAP 1 */
 		{
 			.id	= ION_AUDIO_HEAP_ID,
 			.type	= ION_HEAP_TYPE_CARVEOUT,
@@ -677,6 +678,15 @@ static struct ion_platform_data ion_pdata = {
 			.memory_type = ION_EBI_TYPE,
 			.extra_data = (void *)&co_ion_pdata,
 		},
+    		/* AUDIO HEAP 2*/
+    		{
+      			.id    = ION_AUDIO_HEAP_BL_ID,
+      			.type  = ION_HEAP_TYPE_CARVEOUT,
+      			.name  = ION_AUDIO_BL_HEAP_NAME,
+      			.memory_type = ION_EBI_TYPE,
+      			.extra_data = (void *)&co_ion_pdata,
+      			.base = BOOTLOADER_BASE_ADDR,
+    		},
 #endif
 	}
 };
@@ -746,8 +756,9 @@ static void __init size_ion_devices(void)
 {
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 	ion_pdata.heaps[1].size = msm_ion_camera_size;
-	ion_pdata.heaps[2].size = msm_ion_audio_size;
+	ion_pdata.heaps[2].size = PMEM_KERNEL_EBI1_SIZE;
 	ion_pdata.heaps[3].size = msm_ion_sf_size;
+	ion_pdata.heaps[4].size = msm_ion_audio_size;
 #endif
 }
 
@@ -755,7 +766,7 @@ static void __init reserve_ion_memory(void)
 {
 #if defined(CONFIG_ION_MSM) && defined(CONFIG_MSM_MULTIMEDIA_USE_ION)
 	msm7627a_reserve_table[MEMTYPE_EBI1].size += msm_ion_camera_size;
-	msm7627a_reserve_table[MEMTYPE_EBI1].size += msm_ion_audio_size;
+	msm7627a_reserve_table[MEMTYPE_EBI1].size += PMEM_KERNEL_EBI1_SIZE;
 	msm7627a_reserve_table[MEMTYPE_EBI1].size += msm_ion_sf_size;
 #endif
 }
@@ -791,6 +802,7 @@ static void __init msm8625_reserve(void)
 {
 	memblock_remove(MSM8625_SECONDARY_PHYS, SZ_8);
 	memblock_remove(MSM8625_NON_CACHE_MEM, SZ_2K);
+	memblock_remove(BOOTLOADER_BASE_ADDR, msm_ion_audio_size);
 	msm7627a_reserve();
 }
 
