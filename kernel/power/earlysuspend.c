@@ -32,6 +32,8 @@ static int debug_mask = DEBUG_USER_STATE;
 
 module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
 
+void set_vfs_cache_pressure(int screen_on);
+
 /* power key detect solution for ANR */
 void del_power_key_timer(void);
 
@@ -106,6 +108,8 @@ static void early_suspend(struct work_struct *work)
 		}
 	}
 
+	set_vfs_cache_pressure(0);
+
 	mutex_unlock(&early_suspend_lock);
 
 	suspend_sys_sync_queue();
@@ -127,7 +131,8 @@ static void late_resume(struct work_struct *work)
 	int abort = 0;
 
 	mutex_lock(&early_suspend_lock);
-	/* set sample rate and up_threshold to non-idle state value */
+
+	set_vfs_cache_pressure(1);
     
 	spin_lock_irqsave(&state_lock, irqflags);
 	if (state == SUSPENDED)

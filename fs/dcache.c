@@ -78,7 +78,10 @@
  *   dentry1->d_lock
  *     dentry2->d_lock
  */
-int sysctl_vfs_cache_pressure __read_mostly = 100;
+#define DEFAULT_VFS_CACHE_PRESSURE 65
+int sysctl_vfs_cache_pressure __read_mostly, resume_cache_pressure;
+int suspend_cache_pressure = 20;
+
 EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
 
 static __cacheline_aligned_in_smp DEFINE_SPINLOCK(dcache_lru_lock);
@@ -3083,6 +3086,9 @@ EXPORT_SYMBOL(d_genocide);
 
 void __init vfs_caches_init_early(void)
 {
+   sysctl_vfs_cache_pressure = resume_cache_pressure =
+        DEFAULT_VFS_CACHE_PRESSURE;
+
 	dcache_init_early();
 	inode_init_early();
 }
@@ -3107,3 +3113,19 @@ void __init vfs_caches_init(unsigned long mempages)
 	bdev_cache_init();
 	chrdev_init();
 }
+
+/* set set_vfs_cache_pressure according to the input parameter screen_on:
+   1: 20
+   2: 65
+*/
+void set_vfs_cache_pressure(int screen_on)
+{
+    if (1 == screen_on) {
+        sysctl_vfs_cache_pressure = resume_cache_pressure;
+    } else {
+        if (sysctl_vfs_cache_pressure != resume_cache_pressure)
+            resume_cache_pressure = sysctl_vfs_cache_pressure;
+            sysctl_vfs_cache_pressure = suspend_cache_pressure;
+    }
+}
+EXPORT_SYMBOL(set_vfs_cache_pressure);
