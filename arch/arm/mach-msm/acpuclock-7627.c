@@ -282,7 +282,7 @@ static struct clkctl_acpu_speed pll0_960_pll1_196_pll2_1200_pll4_1209[] = {
 
 /* 8625 PLL4 @ 1401.6MHz with GSM capable modem */
 static struct clkctl_acpu_speed pll0_960_pll1_245_pll2_1200_pll4_1401[] = {
-	{ 0, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 30720 },
+	{ 1, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 30720 },
 	{ 1, 61440, ACPU_PLL_1, 1, 3,  7680, 3, 0, 61440 },
 	{ 1, 122880, ACPU_PLL_1, 1, 1,  15360, 3, 1, 61440 },
 	{ 1, 245760, ACPU_PLL_1, 1, 0, 30720, 3, 1, 61440 },
@@ -303,7 +303,7 @@ static struct clkctl_acpu_speed pll0_960_pll1_245_pll2_1200_pll4_1401[] = {
 
 /* 8625 PLL4 @ 1401.6MHz with CDMA capable modem */
 static struct clkctl_acpu_speed pll0_960_pll1_196_pll2_1200_pll4_1401[] = {
-	{ 0, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 24576 },
+	{ 1, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 24576 },
 	{ 1, 65536, ACPU_PLL_1, 1, 3,  8192, 3, 1, 49152 },
 	{ 1, 98304, ACPU_PLL_1, 1, 1,  12288, 3, 1, 49152 },
 	{ 1, 196608, ACPU_PLL_1, 1, 0, 24576, 3, 1, 98304 },
@@ -355,7 +355,7 @@ static struct clkctl_acpu_speed pll0_960_pll1_196_pll2_1200_pll4_1008_2p0[] = {
 
 /* 8625 PLL4 @ 1104MHz with GSM capable modem with v2.0 plan */
 static struct clkctl_acpu_speed pll0_960_pll1_245_pll2_1200_pll4_1104[] = {
-	{ 0, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 30720 },
+	{ 1, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 30720 },
 	{ 1, 245760, ACPU_PLL_1, 1, 0, 30720, 3, 1, 61440 },
 	{ 1, 320000, ACPU_PLL_0, 4, 2, 40000, 3, 2, 122880 },
 	{ 1, 480000, ACPU_PLL_0, 4, 1, 60000, 3, 3, 122880 },
@@ -368,7 +368,7 @@ static struct clkctl_acpu_speed pll0_960_pll1_245_pll2_1200_pll4_1104[] = {
 
 /* 8625 PLL4 @ 1104MHz with CDMA capable modem with v2.0 plan */
 static struct clkctl_acpu_speed pll0_960_pll1_196_pll2_1200_pll4_1104[] = {
-	{ 0, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 24576 },
+	{ 1, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 24576 },
 	{ 1, 196608, ACPU_PLL_1, 1, 0, 24576, 3, 1, 98304 },
 	{ 1, 320000, ACPU_PLL_0, 4, 2, 40000, 3, 2, 122880 },
 	{ 1, 480000, ACPU_PLL_0, 4, 1, 60000, 3, 3, 122880 },
@@ -394,7 +394,7 @@ static struct clkctl_acpu_speed pll0_960_pll1_245_pll2_1200_pll4_1152[] = {
 
 /* 8625 PLL4 @ 1115MHz with CDMA capable modem with v2.0 plan */
 static struct clkctl_acpu_speed pll0_960_pll1_196_pll2_1200_pll4_1152[] = {
-	{ 0, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 24576 },
+	{ 1, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 24576 },
 	{ 1, 196608, ACPU_PLL_1, 1, 0, 24576, 3, 1, 98304 },
 	{ 1, 320000, ACPU_PLL_0, 4, 2, 40000, 3, 2, 122880 },
 	{ 1, 480000, ACPU_PLL_0, 4, 1, 60000, 3, 3, 122880 },
