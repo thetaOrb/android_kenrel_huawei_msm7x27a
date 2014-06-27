@@ -330,6 +330,9 @@ MAKEFLAGS += --include-dir=$(srctree)
 $(srctree)/scripts/Kbuild.include: ;
 include $(srctree)/scripts/Kbuild.include
 
+# Make variables (CC, etc...)
+#CUSTOM_PREFIX	= ccache
+
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
 REAL_CC		= $(CROSS_COMPILE)gcc
@@ -354,20 +357,19 @@ CHECK		= sparse
 #----------------------[ General Setup ]--------------------------------#
 ARM_ARCH	:= -march=armv7-a
 ARM_CPU		:= -mcpu=cortex-a5
-#ARM_MTUNE	:= -mtune=cortex-a5
-#ARM_FLOAT_ABI	:= -mfloat-abi=soft
-#ARM_FPU	:= -mfpu=vfp
+ARM_MTUNE	:= -mtune=cortex-a5
+ARM_FLOAT_ABI	:= -mfloat-abi=soft
+ARM_FPU		:= -mfpu=neon
 #----------------------[ Setup: GCC error handling ]--------------------#
-#ARM_CC_FLAGS	+= -Wno-maybe-uninitialized
+ARM_CC_FLAGS	+= -Wno-maybe-uninitialized
 #ARM_CC_FLAGS	+= -Wno-array-bounds
 #ARM_CC_FLAGS	+= -Wno-sizeof-pointer-memaccess
 #ARM_CC_FLAGS	+= -Wno-sequence-point
 #----------------------[ Setup: GCC ]-----------------------------------#
-ARM_CC_FLAGS	+= -marm
+ARM_CC_FLAGS	+= -fno-inline-small-functions \
+		   -fno-sched-spec \
+		   -fno-toplevel-reorder
 
-#ARM_CC_FLAGS	+= -fno-toplevel-reorder
-
-#ARM_CC_FLAGS	+= $(ARM_MTUNE)
 ARM_CC_FLAGS	+= $(ARM_ARCH)
 ARM_CC_FLAGS	+= $(ARM_CPU)
 #ARM_CC_FLAGS	+= $(ARM_FPU)
