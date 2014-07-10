@@ -36,7 +36,6 @@
 #include <linux/idr.h>
 #include <linux/backing-dev.h>
 #include <linux/gfp.h>
-#include <linux/slab.h>
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
@@ -1085,7 +1084,7 @@ static int __init mtd_bdi_init(struct backing_dev_info *bdi, const char *name)
 
 	ret = bdi_init(bdi);
 	if (!ret)
-		ret = bdi_register(bdi, NULL, "%s", name);
+		ret = bdi_register(bdi, NULL, name);
 
 	if (ret)
 		bdi_destroy(bdi);

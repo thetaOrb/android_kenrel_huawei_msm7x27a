@@ -15,7 +15,6 @@
 
 #include <linux/types.h>
 #include <linux/string.h>
-#include <linux/init.h>
 
 #ifndef CONFIG_DECOMPRESS_GZIP
 # define gunzip NULL
@@ -36,13 +35,11 @@
 # define unlz4 NULL
 #endif
 
-struct compress_format {
+static const struct compress_format {
 	unsigned char magic[2];
 	const char *name;
 	decompress_fn decompressor;
-};
-
-static const struct compress_format compressed_formats[] __initconst = {
+} compressed_formats[] = {
 	{ {037, 0213}, "gzip", gunzip },
 	{ {037, 0236}, "gzip", gunzip },
 	{ {0x42, 0x5a}, "bzip2", bunzip2 },
@@ -53,7 +50,7 @@ static const struct compress_format compressed_formats[] __initconst = {
 	{ {0, 0}, NULL, NULL }
 };
 
-decompress_fn __init decompress_method(const unsigned char *inbuf, int len,
+decompress_fn decompress_method(const unsigned char *inbuf, int len,
 				const char **name)
 {
 	const struct compress_format *cf;

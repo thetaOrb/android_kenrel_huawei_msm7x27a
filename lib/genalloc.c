@@ -36,11 +36,6 @@
 #include <linux/genalloc.h>
 #include <linux/vmalloc.h>
 
-static inline size_t chunk_size(const struct gen_pool_chunk *chunk)
-{
-	return chunk->end_addr - chunk->start_addr + 1;
-}
-
 static int set_bits_ll(unsigned long *addr, unsigned long mask_to_set)
 {
 	unsigned long val, nval;
@@ -185,7 +180,7 @@ int gen_pool_add_virt(struct gen_pool *pool, unsigned long virt, phys_addr_t phy
 				BITS_TO_LONGS(nbits) * sizeof(long);
 
 	if (nbytes <= PAGE_SIZE)
-		chunk = kzalloc_node(nbytes, GFP_KERNEL, nid);
+		chunk = kmalloc_node(nbytes, __GFP_ZERO, nid);
 	else
 		chunk = vmalloc(nbytes);
 	if (unlikely(chunk == NULL))
@@ -195,7 +190,7 @@ int gen_pool_add_virt(struct gen_pool *pool, unsigned long virt, phys_addr_t phy
 
 	chunk->phys_addr = phys;
 	chunk->start_addr = virt;
-	chunk->end_addr = virt + size - 1;
+	chunk->end_addr = virt + size;
 	atomic_set(&chunk->avail, size);
 
 	spin_lock(&pool->lock);
@@ -220,7 +215,7 @@ phys_addr_t gen_pool_virt_to_phys(struct gen_pool *pool, unsigned long addr)
 
 	rcu_read_lock();
 	list_for_each_entry_rcu(chunk, &pool->chunks, next_chunk) {
-		if (addr >= chunk->start_addr && addr <= chunk->end_addr) {
+		if (addr >= chunk->start_addr && addr < chunk->end_addr) {
 			paddr = chunk->phys_addr + (addr - chunk->start_addr);
 			break;
 		}
@@ -254,7 +249,7 @@ void gen_pool_destroy(struct gen_pool *pool)
 		chunk = list_entry(_chunk, struct gen_pool_chunk, next_chunk);
 		list_del(&chunk->next_chunk);
 
-		end_bit = chunk_size(chunk) >> order;
+		end_bit = (chunk->end_addr - chunk->start_addr) >> order;
 		nbytes = sizeof(struct gen_pool_chunk) +
 				BITS_TO_LONGS(end_bit) * sizeof(long);
 		bit = find_next_bit(chunk->bits, end_bit, 0);
@@ -272,62 +267,6 @@ void gen_pool_destroy(struct gen_pool *pool)
 	return;
 }
 EXPORT_SYMBOL(gen_pool_destroy);
-
-/**
- * gen_pool_alloc - allocate special memory from the pool
- * @pool: pool to allocate from
- * @size: number of bytes to allocate from the pool
- *
- * Allocate the requested number of bytes from the specified pool.
- * Uses a first-fit algorithm. Can not be used in NMI handler on
- * architectures without NMI-safe cmpxchg implementation.
- *
- * NOTE: changes done in this function should be applied to
- *       CAF's fork "gen_pool_alloc_aligned", too.
- */
-unsigned long gen_pool_alloc(struct gen_pool *pool, size_t size)
-{
-	struct gen_pool_chunk *chunk;
-	unsigned long addr = 0;
-	int order = pool->min_alloc_order;
-	int nbits, start_bit = 0, end_bit, remain;
-
-#ifndef CONFIG_ARCH_HAVE_NMI_SAFE_CMPXCHG
-	BUG_ON(in_nmi());
-#endif
-
-	if (size == 0)
-		return 0;
-
-	nbits = (size + (1UL << order) - 1) >> order;
-	rcu_read_lock();
-	list_for_each_entry_rcu(chunk, &pool->chunks, next_chunk) {
-		if (size > atomic_read(&chunk->avail))
-			continue;
-
-		end_bit = chunk_size(chunk) >> order;
-retry:
-		start_bit = bitmap_find_next_zero_area(chunk->bits, end_bit,
-						       start_bit, nbits, 0);
-		if (start_bit >= end_bit)
-			continue;
-		remain = bitmap_set_ll(chunk->bits, start_bit, nbits);
-		if (remain) {
-			remain = bitmap_clear_ll(chunk->bits, start_bit,
-						 nbits - remain);
-			BUG_ON(remain);
-			goto retry;
-		}
-
-		addr = chunk->start_addr + ((unsigned long)start_bit << order);
-		size = nbits << order;
-		atomic_sub(size, &chunk->avail);
-		break;
-	}
-	rcu_read_unlock();
-	return addr;
-}
-EXPORT_SYMBOL(gen_pool_alloc);
 
 /**
  * gen_pool_alloc_aligned - allocate special memory from the pool
@@ -363,16 +302,16 @@ unsigned long gen_pool_alloc_aligned(struct gen_pool *pool, size_t size,
 
 	rcu_read_lock();
 	list_for_each_entry_rcu(chunk, &pool->chunks, next_chunk) {
-		unsigned long chunk_length;
+		unsigned long chunk_size;
 		if (size > atomic_read(&chunk->avail))
 			continue;
-		chunk_length = chunk_size(chunk) >> order;
+		chunk_size = (chunk->end_addr - chunk->start_addr) >> order;
 
 retry:
-		start_bit = bitmap_find_next_zero_area_off(chunk->bits, chunk_length,
-						   0, nbits, align_mask,
-						   chunk->start_addr >> order);
-		if (start_bit >= chunk_length)
+		start_bit = bitmap_find_next_zero_area_off(chunk->bits, chunk_size,
+						       0, nbits, align_mask,
+						       chunk->start_addr);
+		if (start_bit >= chunk_size)
 			continue;
 		remain = bitmap_set_ll(chunk->bits, start_bit, nbits);
 		if (remain) {
@@ -415,8 +354,8 @@ void gen_pool_free(struct gen_pool *pool, unsigned long addr, size_t size)
 	nbits = (size + (1UL << order) - 1) >> order;
 	rcu_read_lock();
 	list_for_each_entry_rcu(chunk, &pool->chunks, next_chunk) {
-		if (addr >= chunk->start_addr && addr <= chunk->end_addr) {
-			BUG_ON(addr + size - 1 > chunk->end_addr);
+		if (addr >= chunk->start_addr && addr < chunk->end_addr) {
+			BUG_ON(addr + size > chunk->end_addr);
 			start_bit = (addr - chunk->start_addr) >> order;
 			remain = bitmap_clear_ll(chunk->bits, start_bit, nbits);
 			BUG_ON(remain);
@@ -485,7 +424,7 @@ size_t gen_pool_size(struct gen_pool *pool)
 
 	rcu_read_lock();
 	list_for_each_entry_rcu(chunk, &pool->chunks, next_chunk)
-		size += chunk_size(chunk);
+		size += chunk->end_addr - chunk->start_addr;
 	rcu_read_unlock();
 	return size;
 }
