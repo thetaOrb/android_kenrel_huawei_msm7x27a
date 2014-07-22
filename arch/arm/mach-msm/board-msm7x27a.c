@@ -454,7 +454,6 @@ static struct msm_serial_hs_platform_data msm_uart_dm1_pdata = {
 	.rx_to_inject		= 0xFD,
 };
 
-
 static struct msm_pm_platform_data msm7x27a_pm_data[MSM_PM_SLEEP_MODE_NR] = {
 	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_POWER_COLLAPSE)] = {
 					.idle_supported = 1,
@@ -501,8 +500,8 @@ static struct msm_pm_platform_data msm8625_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_POWER_COLLAPSE)] = {
 					.idle_supported = 1,
 					.suspend_supported = 1,
-					.idle_enabled = 1,
-					.suspend_enabled = 1,
+					.idle_enabled = 0,
+					.suspend_enabled = 0,
 					.latency = 16000,
 					.residency = 20000,
 	},
@@ -510,8 +509,8 @@ static struct msm_pm_platform_data msm8625_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_POWER_COLLAPSE_NO_XO_SHUTDOWN)] = {
 					.idle_supported = 1,
 					.suspend_supported = 1,
-					.idle_enabled = 1,
-					.suspend_enabled = 1,
+					.idle_enabled = 0,
+					.suspend_enabled = 0,
 					.latency = 12000,
 					.residency = 20000,
 	},
@@ -520,8 +519,8 @@ static struct msm_pm_platform_data msm8625_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE)] = {
 					.idle_supported = 1,
 					.suspend_supported = 1,
-					.idle_enabled = 1,
-					.suspend_enabled = 1,
+					.idle_enabled = 0,
+					.suspend_enabled = 0,
 					.latency = 500,
 					.residency = 6000,
 	},
@@ -539,8 +538,8 @@ static struct msm_pm_platform_data msm8625_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 	[MSM_PM_MODE(1, MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE)] = {
 					.idle_supported = 1,
 					.suspend_supported = 1,
-					.idle_enabled = 1,
-					.suspend_enabled = 1,
+					.idle_enabled = 0,
+					.suspend_enabled = 0,
 					.latency = 500,
 					.residency = 6000,
 	},
