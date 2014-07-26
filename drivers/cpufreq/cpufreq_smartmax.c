@@ -85,7 +85,7 @@ static unsigned int max_cpu_load;
 /*
  * CPU freq will be decreased if measured load < min_cpu_load;
  */
-#define DEFAULT_MIN_CPU_LOAD 50
+#define DEFAULT_MIN_CPU_LOAD 60
 static unsigned int min_cpu_load;
 
 /*
@@ -103,7 +103,7 @@ static unsigned int up_rate;
 static unsigned int down_rate;
 
 /* in nsecs */
-#define DEFAULT_SAMPLING_RATE 40000
+#define DEFAULT_SAMPLING_RATE 45000
 static unsigned int sampling_rate;
 
 /* in nsecs */
