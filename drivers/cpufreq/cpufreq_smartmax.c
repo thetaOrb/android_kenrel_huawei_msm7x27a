@@ -103,7 +103,7 @@ static unsigned int up_rate;
 static unsigned int down_rate;
 
 /* in nsecs */
-#define DEFAULT_SAMPLING_RATE 45000
+#define DEFAULT_SAMPLING_RATE 40000
 static unsigned int sampling_rate;
 
 /* in nsecs */
