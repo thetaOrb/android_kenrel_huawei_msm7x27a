@@ -94,7 +94,9 @@ void map_page_strongly_ordered(void);
 
 #ifdef CONFIG_CACHE_L2X0
 extern void l2x0_cache_sync(void);
-#define finish_arch_switch(prev)     do { l2x0_cache_sync(); } while (0)
+# if 0
+#  define finish_arch_switch(prev)     do { l2x0_cache_sync(); } while (0)
+# endif
 #endif
 
 #if defined(CONFIG_ARCH_MSM8X60) || defined(CONFIG_ARCH_MSM8960)
