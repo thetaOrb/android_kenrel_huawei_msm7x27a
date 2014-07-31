@@ -1098,16 +1098,19 @@ EXPORT_SYMBOL(msm_adsp_dump);
 int msm_adsp_enable(struct msm_adsp_module *module)
 {
 	int rc = 0;
+	int ns = 0;
 	struct msm_adsp_module *module_en = NULL;
 
 	if (!module)
 		return -EINVAL;
+	
+	ns = sizeof(*module->name);
 
 	MM_INFO("enable '%s'state[%d] id[%d]\n",
 				module->name, module->state, module->id);
-	if (!strncmp(module->name, "JPEGTASK", sizeof(*module->name)))
+	if (!strncmp(module->name, "JPEGTASK", ns))
 		module_en = find_adsp_module_by_name(&adsp_info, "VIDEOTASK");
-	else if (!strncmp(module->name, "VIDEOTASK", sizeof(*module->name)))
+	else if (!strncmp(module->name, "VIDEOTASK", ns))
 		module_en = find_adsp_module_by_name(&adsp_info, "JPEGTASK");
 	if (module_en) {
 		mutex_lock(&module_en->lock);
