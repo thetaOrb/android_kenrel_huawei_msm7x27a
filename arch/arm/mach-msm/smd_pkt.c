@@ -365,8 +365,8 @@ wait_for_packet:
 		pr_err("%s: failure on smd_pkt_dev id: %d - packet size %d"
 		       " > buffer size %d,", __func__, smd_pkt_devp->i,
 			pkt_size, count);
-		mutex_unlock(&smd_pkt_devp->rx_lock);
-		return -ETOOSMALL;
+		//mutex_unlock(&smd_pkt_devp->rx_lock);
+		//return -ETOOSMALL;
 	}
 
 	bytes_read = 0;
