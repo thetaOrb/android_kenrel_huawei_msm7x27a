@@ -52,7 +52,7 @@
  * lowering the frequency towards the ideal frequency is faster than below it.
  */
 
-#define GOV_IDLE_FREQ 1080000
+#define GOV_IDLE_FREQ 480000
 
 #define DEFAULT_SUSPEND_IDEAL_FREQ GOV_IDLE_FREQ
 static unsigned int suspend_ideal_freq;
@@ -85,14 +85,14 @@ static unsigned int max_cpu_load;
 /*
  * CPU freq will be decreased if measured load < min_cpu_load;
  */
-#define DEFAULT_MIN_CPU_LOAD 60
+#define DEFAULT_MIN_CPU_LOAD 50
 static unsigned int min_cpu_load;
 
 /*
  * The minimum amount of time in nsecs to spend at a frequency before we can ramp up.
  * Notice we ignore this when we are below the ideal frequency.
  */
-#define DEFAULT_UP_RATE 40000
+#define DEFAULT_UP_RATE 30000
 static unsigned int up_rate;
 
 /*
@@ -103,14 +103,14 @@ static unsigned int up_rate;
 static unsigned int down_rate;
 
 /* in nsecs */
-#define DEFAULT_SAMPLING_RATE 40000
+#define DEFAULT_SAMPLING_RATE 50000
 static unsigned int sampling_rate;
 
 /* in nsecs */
-#define DEFAULT_INPUT_BOOST_DURATION 50000000
+#define DEFAULT_INPUT_BOOST_DURATION 2000000
 static unsigned int input_boost_duration;
 
-static unsigned int touch_poke_freq = 810000;
+static unsigned int touch_poke_freq = 700800;
 static bool touch_poke = true;
 
 /*
@@ -122,7 +122,7 @@ static bool ramp_up_during_boost = true;
  * external boost interface - boost if duration is written
  * to sysfs for boost_duration
  */
-static unsigned int boost_freq = 810000;
+static unsigned int boost_freq = 700800;
 static bool boost = true;
 
 /* in nsecs */
