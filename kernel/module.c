@@ -2550,6 +2550,16 @@ static int check_modinfo(struct module *mod, struct load_info *info)
 	const char *modmagic = get_modinfo(info, "vermagic");
 	int err;
 
+	if (strcmp(mod->name, "ar6000") == 0 ||
+	    strcmp(mod->name, "cfg80211") == 0) {
+		printk(KERN_WARNING "%s: (%s) vermagic of module: '%s'\n",
+		       __func__, mod->name, modmagic);
+		printk(KERN_WARNING "%s: (%s) vermagic expected: '%s'\n",
+		       __func__, mod->name, vermagic);
+		printk(KERN_WARNING "%s: (%s) 'HACK': ignoring version magic mismatch\n", __func__, mod->name);
+		goto skip_vermagic_check;
+	}
+
 	/* This is allowed: modprobe --force will invalidate it. */
 	if (!modmagic) {
 		err = try_to_force_load(mod, "bad vermagic");
@@ -2560,6 +2570,8 @@ static int check_modinfo(struct module *mod, struct load_info *info)
 		       mod->name, modmagic, vermagic);
 		return -ENOEXEC;
 	}
+
+skip_vermagic_check:
 
 	if (!get_modinfo(info, "intree"))
 		add_taint_module(mod, TAINT_OOT_MODULE);
@@ -2737,6 +2749,21 @@ static int check_module_license_and_versions(struct module *mod)
 	/* lve claims to be GPL but upstream won't provide source */
 	if (strcmp(mod->name, "lve") == 0)
 		add_taint_module(mod, TAINT_PROPRIETARY_MODULE);
+
+/**
+ * HACK: ENFORCE loading of:
+ * 		- ar6000.ko (atheros 6003 wifi)
+ * 		- cfg80211.ko (802.11 configuration api)
+ *
+ * (currently this is necessary for being able to use pre-built wifi kernel modules)
+ */
+	/* HACK: enforce loading of ar6000.ko (atheros 6003 wlan API)  */
+	if (strcmp(mod->name, "ar6000") == 0)
+		add_taint_module(mod, TAINT_FORCED_MODULE);
+
+	/* HACK: enforce loading of cfg80211.ko (802.11 configuration API)  */
+	if (strcmp(mod->name, "cfg80211") == 0)
+		add_taint_module(mod, TAINT_FORCED_MODULE);
 
 #ifdef CONFIG_MODVERSIONS
 	if ((mod->num_syms && !mod->crcs)
