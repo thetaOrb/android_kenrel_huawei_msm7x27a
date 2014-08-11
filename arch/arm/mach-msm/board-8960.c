@@ -567,7 +567,7 @@ static void __init reserve_ion_memory(void)
 			int fixed_position = NOT_FIXED;
 			int mem_is_fmem = 0;
 
-			switch (heap->type) {
+			switch ((int) heap->type) {
 			case ION_HEAP_TYPE_CP:
 				mem_is_fmem = ((struct ion_cp_heap_pdata *)
 					heap->extra_data)->mem_is_fmem;
@@ -646,7 +646,7 @@ static void __init reserve_ion_memory(void)
 			int fixed_position = NOT_FIXED;
 			struct ion_cp_heap_pdata *pdata = NULL;
 
-			switch (heap->type) {
+			switch ((int) heap->type) {
 			case ION_HEAP_TYPE_CP:
 				pdata =
 				(struct ion_cp_heap_pdata *)heap->extra_data;
