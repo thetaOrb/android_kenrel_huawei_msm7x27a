@@ -135,11 +135,10 @@ enum cp_mem_usage {
 #define CACHED          1
 #define UNCACHED        0
 
-#define ION_CACHE_SHIFT 0
+#define ION_SET_CACHED(__cache)		(__cache | ION_FLAG_CACHED)
+#define ION_SET_UNCACHED(__cache)	(__cache & ~ION_FLAG_CACHED)
 
-#define ION_SET_CACHE(__cache)  ((__cache) << ION_CACHE_SHIFT)
-
-#define ION_IS_CACHED(__flags)	((__flags) & (1 << ION_CACHE_SHIFT))
+#define ION_IS_CACHED(__flags)	((__flags) & ION_FLAG_CACHED)
 
 /*
  * This flag allows clients when mapping into the IOMMU to specify to
