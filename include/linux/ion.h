@@ -51,6 +51,14 @@ enum ion_heap_type {
 #define ION_HEAP_CARVEOUT_MASK		(1 << ION_HEAP_TYPE_CARVEOUT)
 #define ION_HEAP_CP_MASK		(1 << ION_HEAP_TYPE_CP)
 
+/**
+ * heap flags - the lower 16 bits are used by core ion, the upper 16
+ * bits are reserved for use by the heaps themselves.
+ */
+#define ION_FLAG_CACHED 1		/* mappings of this buffer should be
+					   cached, ion will do cache
+					   maintenance when the buffer is
+					   mapped for dma */
 
 /**
  * These are the only ids that should be used for Ion heap ids.
@@ -63,6 +71,13 @@ enum ion_heap_type {
 
 enum ion_heap_ids {
 	INVALID_HEAP_ID = -1,
+	/* In a system with the "Mini Ion Upgrade" (such as this one)
+	 * the heap_mask and caching flag end up sharing a spot in
+	 * ion_allocation_data.flags. We should make sure to never use
+	 * the 0th bit for a heap because that's where the caching bit
+	 * ends up.
+	 */
+	ION_BOGUS_HEAP_DO_NOT_USE = 0,
 	ION_CP_MM_HEAP_ID = 8,
 	ION_CP_MFC_HEAP_ID = 12,
 	ION_CP_WB_HEAP_ID = 16, /* 8660 only */
@@ -120,17 +135,22 @@ enum cp_mem_usage {
 #define CACHED          1
 #define UNCACHED        0
 
-#define ION_CACHE_SHIFT 0
+#define ION_SET_CACHED(__cache)		(__cache | ION_FLAG_CACHED)
+#define ION_SET_UNCACHED(__cache)	(__cache & ~ION_FLAG_CACHED)
 
-#define ION_SET_CACHE(__cache)  ((__cache) << ION_CACHE_SHIFT)
-
-#define ION_IS_CACHED(__flags)	((__flags) & (1 << ION_CACHE_SHIFT))
+#define ION_IS_CACHED(__flags)	((__flags) & ION_FLAG_CACHED)
 
 /*
  * This flag allows clients when mapping into the IOMMU to specify to
  * defer un-mapping from the IOMMU until the buffer memory is freed.
  */
 #define ION_IOMMU_UNMAP_DELAYED 1
+
+/*
+ * This flag allows clients to defer unsecuring a buffer until the buffer
+ * is actually freed.
+ */
+#define ION_UNSECURE_DELAYED	1
 
 #ifdef __KERNEL__
 #include <linux/err.h>
@@ -307,14 +327,18 @@ void ion_client_destroy(struct ion_client *client);
  * @len:	size of the allocation
  * @align:	requested allocation alignment, lots of hardware blocks have
  *		alignment requirements of some kind
- * @flags:	mask of heaps to allocate from, if multiple bits are set
+ * @heap_mask:	mask of heaps to allocate from, if multiple bits are set
  *		heaps will be tried in order from lowest to highest order bit
+ * @flags:	heap flags, the low 16 bits are consumed by ion, the high 16
+ *		bits are passed on to the respective heap and can be heap
+ *		custom
  *
  * Allocate memory in one of the heaps provided in heap mask and return
  * an opaque handle to it.
  */
 struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
-			     size_t align, unsigned int flags);
+			     size_t align, unsigned int heap_mask,
+			     unsigned int flags);
 
 /**
  * ion_free - free a handle
@@ -365,8 +389,7 @@ struct sg_table *ion_sg_table(struct ion_client *client,
  * can be used to access this address. If no flags are specified, this
  * will return a non-secure uncached mapping.
  */
-void *ion_map_kernel(struct ion_client *client, struct ion_handle *handle,
-			unsigned long flags);
+void *ion_map_kernel(struct ion_client *client, struct ion_handle *handle);
 
 /**
  * ion_unmap_kernel() - destroy a kernel mapping for a handle
@@ -420,7 +443,6 @@ int ion_handle_get_flags(struct ion_client *client, struct ion_handle *handle,
  *		address space will be mapped to a dummy buffer.
  * @iova - pointer to store the iova address
  * @buffer_size - pointer to store the size of the buffer
- * @flags - flags for options to map
  * @iommu_flags - flags specific to the iommu.
  *
  * Maps the handle into the iova space specified via domain number. Iova
@@ -539,6 +561,26 @@ int msm_ion_secure_heap_2_0(int heap_id, enum cp_mem_usage usage);
 int msm_ion_unsecure_heap_2_0(int heap_id, enum cp_mem_usage usage);
 
 /**
+ * msm_ion_secure_buffer - secure an individual buffer
+ *
+ * @client - client who has access to the buffer
+ * @handle - buffer to secure
+ * @usage - usage hint to TZ
+ * @flags - flags for the securing
+ */
+int msm_ion_secure_buffer(struct ion_client *client, struct ion_handle *handle,
+				enum cp_mem_usage usage, int flags);
+
+/**
+ * msm_ion_unsecure_buffer - unsecure an individual buffer
+ *
+ * @client - client who has access to the buffer
+ * @handle - buffer to secure
+ */
+int msm_ion_unsecure_buffer(struct ion_client *client,
+				struct ion_handle *handle);
+
+/**
  * msm_ion_do_cache_op - do cache operations.
  *
  * @client - pointer to ION client.
@@ -576,7 +618,9 @@ static inline struct ion_client *msm_ion_client_create(unsigned int heap_mask,
 static inline void ion_client_destroy(struct ion_client *client) { }
 
 static inline struct ion_handle *ion_alloc(struct ion_client *client,
-			size_t len, size_t align, unsigned int flags)
+					size_t len, size_t align,
+					unsigned int heap_mask,
+					unsigned int flags)
 {
 	return ERR_PTR(-ENODEV);
 }
@@ -598,7 +642,7 @@ static inline struct sg_table *ion_sg_table(struct ion_client *client,
 }
 
 static inline void *ion_map_kernel(struct ion_client *client,
-	struct ion_handle *handle, unsigned long flags)
+	struct ion_handle *handle)
 {
 	return ERR_PTR(-ENODEV);
 }
@@ -631,6 +675,12 @@ static inline int ion_map_iommu(struct ion_client *client,
 			unsigned long iommu_flags)
 {
 	return -ENODEV;
+}
+
+static inline int ion_handle_get_size(struct ion_client *client,
+        struct ion_handle *handle, unsigned long *size)
+{
+  return -ENODEV;
 }
 
 static inline void ion_unmap_iommu(struct ion_client *client,
@@ -704,6 +754,14 @@ static inline int msm_ion_do_cache_op(struct ion_client *client,
  * Provided by userspace as an argument to the ioctl
  */
 struct ion_allocation_data {
+	size_t len;
+	size_t align;
+        unsigned int heap_mask;
+	unsigned int flags;
+	struct ion_handle *handle;
+};
+
+struct ion_allocation_data_compat {
 	size_t len;
 	size_t align;
 	unsigned int flags;
@@ -791,6 +849,9 @@ struct ion_flag_data {
 #define ION_IOC_ALLOC		_IOWR(ION_IOC_MAGIC, 0, \
 				      struct ion_allocation_data)
 
+#define ION_IOC_ALLOC_COMPAT _IOWR(ION_IOC_MAGIC, 0, \
+				      struct ion_allocation_data_compat)
+
 /**
  * DOC: ION_IOC_FREE - free memory
  *
@@ -826,7 +887,9 @@ struct ion_flag_data {
  * descriptor obtained from ION_IOC_SHARE and returns the struct with the handle
  * filed set to the corresponding opaque handle.
  */
-#define ION_IOC_IMPORT		_IOWR(ION_IOC_MAGIC, 5, int)
+#define ION_IOC_IMPORT    _IOWR(ION_IOC_MAGIC, 5, struct ion_fd_data)
+
+#define ION_IOC_IMPORT_COMPAT	_IOWR(ION_IOC_MAGIC, 5, int)
 
 /**
  * DOC: ION_IOC_CUSTOM - call architecture specific ion ioctl
@@ -842,29 +905,44 @@ struct ion_flag_data {
  *
  * Clean the caches of the handle specified.
  */
-#define ION_IOC_CLEAN_CACHES	_IOWR(ION_IOC_MAGIC, 7, \
+#define ION_IOC_CLEAN_CACHES  _IOWR(ION_IOC_MAGIC, 20, \
+						struct ion_flush_data)
+#define ION_IOC_CLEAN_CACHES_COMPAT	_IOWR(ION_IOC_MAGIC, 7, \
 						struct ion_flush_data)
 /**
  * DOC: ION_MSM_IOC_INV_CACHES - invalidate the caches
  *
  * Invalidate the caches of the handle specified.
  */
-#define ION_IOC_INV_CACHES	_IOWR(ION_IOC_MAGIC, 8, \
+#define ION_IOC_INV_CACHES  _IOWR(ION_IOC_MAGIC, 21, \
 						struct ion_flush_data)
+#define ION_IOC_INV_CACHES_COMPAT	_IOWR(ION_IOC_MAGIC, 8, \
+					    struct ion_flush_data)
 /**
  * DOC: ION_MSM_IOC_CLEAN_CACHES - clean and invalidate the caches
  *
  * Clean and invalidate the caches of the handle specified.
  */
-#define ION_IOC_CLEAN_INV_CACHES	_IOWR(ION_IOC_MAGIC, 9, \
+#define ION_IOC_CLEAN_INV_CACHES  _IOWR(ION_IOC_MAGIC, 22, \
 						struct ion_flush_data)
-
+#define ION_IOC_CLEAN_INV_CACHES_COMPAT	_IOWR(ION_IOC_MAGIC, 9, \
+					    struct ion_flush_data)
 /**
  * DOC: ION_IOC_GET_FLAGS - get the flags of the handle
  *
  * Gets the flags of the current handle which indicate cachability,
  * secure state etc.
  */
-#define ION_IOC_GET_FLAGS		_IOWR(ION_IOC_MAGIC, 10, \
+#define ION_IOC_GET_FLAGS    _IOWR(ION_IOC_MAGIC, 23, \
+						struct ion_flag_data)
+#define ION_IOC_GET_FLAGS_COMPAT _IOWR(ION_IOC_MAGIC, 10, \
+              struct ion_flag_data)
+
+/**
+ * DOC: ION_IOC_SYNC - BOGUS
+ *
+ * NOT SUPPORTED
+ */
+#define ION_IOC_SYNC		_IOWR(ION_IOC_MAGIC, 42, \
 						struct ion_flag_data)
 #endif /* _LINUX_ION_H */
