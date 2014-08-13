@@ -52,7 +52,7 @@
  * lowering the frequency towards the ideal frequency is faster than below it.
  */
 
-#define GOV_IDLE_FREQ 480000
+#define GOV_IDLE_FREQ 700800
 
 #define DEFAULT_SUSPEND_IDEAL_FREQ GOV_IDLE_FREQ
 static unsigned int suspend_ideal_freq;
@@ -99,18 +99,18 @@ static unsigned int up_rate;
  * The minimum amount of time in nsecs to spend at a frequency before we can ramp down.
  * Notice we ignore this when we are above the ideal frequency.
  */
-#define DEFAULT_DOWN_RATE 80000
+#define DEFAULT_DOWN_RATE 60000
 static unsigned int down_rate;
 
 /* in nsecs */
-#define DEFAULT_SAMPLING_RATE 50000
+#define DEFAULT_SAMPLING_RATE 40000
 static unsigned int sampling_rate;
 
 /* in nsecs */
 #define DEFAULT_INPUT_BOOST_DURATION 500000
 static unsigned int input_boost_duration;
 
-static unsigned int touch_poke_freq = 700800;
+static unsigned int touch_poke_freq = 1008000;
 static bool touch_poke = true;
 
 /*
@@ -122,7 +122,7 @@ static bool ramp_up_during_boost = true;
  * external boost interface - boost if duration is written
  * to sysfs for boost_duration
  */
-static unsigned int boost_freq = 700800;
+static unsigned int boost_freq = 1008000;
 static bool boost = true;
 
 /* in nsecs */
@@ -1121,8 +1121,8 @@ static int cpufreq_governor_smartmax(struct cpufreq_policy *new_policy,
 	int rc;
 	struct smartmax_info_s *this_smartmax = &per_cpu(smartmax_info, cpu);
 	struct sched_param param = { .sched_priority = 1 };
-    unsigned int latency;
-    unsigned int min_sampling_rate;
+    //unsigned int latency;
+    //unsigned int min_sampling_rate;
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
@@ -1176,12 +1176,12 @@ static int cpufreq_governor_smartmax(struct cpufreq_policy *new_policy,
 #ifdef CONFIG_HAS_EARLYSUSPEND
 			register_early_suspend(&smartmax_early_suspend_handler);
 #endif
-			latency = new_policy->cpuinfo.transition_latency / 1000;
+			/*latency = new_policy->cpuinfo.transition_latency / 1000;
 			if (latency == 0)
 				latency = 1;
 			
 			min_sampling_rate = max(sampling_rate, MIN_LATENCY_MULTIPLIER * latency);
-			sampling_rate = max(min_sampling_rate, latency * LATENCY_MULTIPLIER);
+			sampling_rate = max(min_sampling_rate, latency * LATENCY_MULTIPLIER);*/
 		}
 
 		mutex_unlock(&dbs_mutex);
