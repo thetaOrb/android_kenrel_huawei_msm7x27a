@@ -610,8 +610,6 @@ struct ion_custom_data {
  */
 #define ION_IOC_IMPORT    _IOWR(ION_IOC_MAGIC, 5, struct ion_fd_data)
 
-#define ION_IOC_IMPORT_COMPAT	_IOWR(ION_IOC_MAGIC, 5, int)
-
 /**
  * DOC: ION_IOC_CUSTOM - call architecture specific ion ioctl
  *
